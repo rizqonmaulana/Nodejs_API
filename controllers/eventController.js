@@ -21,6 +21,7 @@ module.exports = {
             let totalData
             let searchWhere = {}
             let roleWhere = {}
+            let filterWhere = {}
 
             search ? searchWhere = { name: { [Op.like]: `%${search}%` } } : searchWhere = {}
 
@@ -40,37 +41,53 @@ module.exports = {
                 return helper.response(res, 400, 'Role is not valid')
             }
 
+            if (filter === 'All'){
+                filterWhere = {}
+            } else if (filter === 'Pending' || filter === 'Approve' || filter === 'Reject'){
+                filterWhere = {
+                    status: {
+                        [Op.like]: `%${filter}%`
+                    }
+                }
+            } else {
+                return helper.response(res, 400, 'Filter is not valid, it should be All || Pending || Approve || Reject')
+            }
+
             totalData = await Event.findAndCountAll({
+                include: [{
+                    model: EventDate
+                }],
                 where: {
                     [Op.or]: [{
                         ...searchWhere,
-                        ...roleWhere
+                        ...roleWhere,
+                        ...filterWhere
                     }],
-                }
+                },
             })
 
 
-            const totalPage = Math.ceil(totalData / limit)
-            const offset = page * limit - limit
-            const prevLink =
-                page > 1
-                ? qs.stringify({ ...request.query, ...{ page: page - 1 } })
-                : null
-            const nextLink =
-                page < totalPage
-                ? qs.stringify({ ...request.query, ...{ page: page + 1 } })
-                : null
+            // const totalPage = Math.ceil(totalData / limit)
+            // const offset = page * limit - limit
+            // const prevLink =
+            //     page > 1
+            //     ? qs.stringify({ ...request.query, ...{ page: page - 1 } })
+            //     : null
+            // const nextLink =
+            //     page < totalPage
+            //     ? qs.stringify({ ...request.query, ...{ page: page + 1 } })
+            //     : null
 
-            const pageInfo = {
-                page,
-                totalPage,
-                limit,
-                totalData,
-                nextLink: nextLink && process.env.URL + `/product?${nextLink}`,
-                prevLink: prevLink && process.env.URL + `/product?${prevLink}`
-            }
+            // const pageInfo = {
+            //     page,
+            //     totalPage,
+            //     limit,
+            //     totalData,
+            //     nextLink: nextLink && process.env.URL + `/product?${nextLink}`,
+            //     prevLink: prevLink && process.env.URL + `/product?${prevLink}`
+            // }
 
-            console.log(totalData);
+            // console.log(totalData);
             return helper.response(res, 200, 'Success get data', totalData);
         } catch (error) {
             console.log(error);
