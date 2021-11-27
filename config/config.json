@@ -1,0 +1,23 @@
+{
+  "development": {
+    "username": "root",
+    "password": "R4h4514123!@#",
+    "database": "embreo_dev",
+    "host": "127.0.0.1",
+    "dialect": "mysql"
+  },
+  "test": {
+    "username": "root",
+    "password": null,
+    "database": "database_test",
+    "host": "127.0.0.1",
+    "dialect": "mysql"
+  },
+  "production": {
+    "username": "root",
+    "password": "",
+    "database": "embreo_prod",
+    "host": "127.0.0.1",
+    "dialect": "mysql"
+  }
+}
