@@ -87,10 +87,10 @@ module.exports = {
                 locationLang,
                 companyUserId,
                 vendorUserId,
-                eventDate
+                eventDates
             } = req.body;
 
-            if (eventDate.length > 3) {
+            if (eventDates.length > 3) {
                 return helper.response(res, 400, 'Please insert only 3 date');
             }
 
@@ -106,10 +106,10 @@ module.exports = {
 
             let dateArr = []
 
-            for (let i = 0; i < eventDate.length; i++) {
+            for (let i = 0; i < eventDates.length; i++) {
                 let newDate = {
                     eventId: newEvent.id,
-                    date: eventDate[i],
+                    date: eventDates[i],
                 }
                 dateArr.push(newDate)
             }
@@ -141,10 +141,10 @@ module.exports = {
                 locationLang,
                 companyUserId,
                 vendorUserId,
-                eventDate
+                eventDates
             } = req.body;
 
-            if (eventDate.length > 3) {
+            if (eventDates.length > 3) {
                 return helper.response(res, 400, 'Please insert only 3 date');
             }
 
@@ -159,11 +159,11 @@ module.exports = {
                 where: { id }
             })
 
-            for (let i = 0; i < eventDate.length; i++) {
+            for (let i = 0; i < eventDates.length; i++) {
                await EventDate.update({
-                    date: eventDate[i].date,
+                    date: eventDates[i].date,
                 }, {
-                    where: { id: eventDate[i].id }
+                    where: { id: eventDates[i].id }
                 })
             }
 
