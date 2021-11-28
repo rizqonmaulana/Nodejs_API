@@ -2,8 +2,8 @@ const db = require('../models/index');
 const Event = db.Event;
 const EventDate = db.EventDate;
 const helper = require('../helpers/response');
-const e = require('express');
 const Op = db.Sequelize.Op;
+const qs = require('querystring')
 
 module.exports = {
     getEvent: async (req, res) => {
@@ -21,6 +21,7 @@ module.exports = {
             let totalData
             let searchWhere = {}
             let roleWhere = {}
+            let filterWhere = {}
 
             search ? searchWhere = { name: { [Op.like]: `%${search}%` } } : searchWhere = {}
 
@@ -40,38 +41,70 @@ module.exports = {
                 return helper.response(res, 400, 'Role is not valid')
             }
 
+            if (filter === 'All'){
+                filterWhere = {}
+            } else if (filter === 'Pending'){
+                filterWhere = {
+                    status: {
+                        [Op.like]: 'Pending'
+                    }
+                }
+            } else if (filter === 'Approve'){
+                filterWhere = {
+                    status: {
+                        [Op.like]: 'Approve'
+                    }
+                }
+            } else if (filter === 'Reject'){
+                filterWhere = {
+                    status: {
+                        [Op.like]: 'Reject'
+                    }
+                }
+            } else {
+                return helper.response(res, 400, 'Filter is not valid')
+            }
+
             totalData = await Event.findAndCountAll({
                 where: {
                     [Op.or]: [{
                         ...searchWhere,
-                        ...roleWhere
+                        ...roleWhere,
+                        ...filterWhere
                     }],
-                }
+                },
+                include: [{
+                    model: EventDate,
+                    as: 'eventDates',
+                }],
+                limit : limit,
+                offset : (page - 1) * limit,
+                distinct: true,
             })
 
 
-            const totalPage = Math.ceil(totalData / limit)
-            const offset = page * limit - limit
+            const totalPage = Math.ceil(totalData.count / limit)
             const prevLink =
                 page > 1
-                ? qs.stringify({ ...request.query, ...{ page: page - 1 } })
+                ? qs.stringify({ ...req.query, ...{ page: page - 1 } })
                 : null
             const nextLink =
                 page < totalPage
-                ? qs.stringify({ ...request.query, ...{ page: page + 1 } })
+                ? qs.stringify({ ...req.query, ...{ page: page + 1 } })
                 : null
 
             const pageInfo = {
                 page,
                 totalPage,
                 limit,
-                totalData,
-                nextLink: nextLink && process.env.URL + `/product?${nextLink}`,
-                prevLink: prevLink && process.env.URL + `/product?${prevLink}`
+                totalData : totalData.count,
+                nextLink: nextLink && process.env.URL + `/event?${nextLink}`,
+                prevLink: prevLink && process.env.URL + `/event?${prevLink}`
             }
 
-            console.log(totalData);
-            return helper.response(res, 200, 'Success get data', totalData);
+            const response = [ ...totalData.rows ]
+
+            return helper.response(res, 200, 'Success get data', response, pageInfo);
         } catch (error) {
             console.log(error);
             return helper.response(res, 400, error);
@@ -171,15 +204,9 @@ module.exports = {
                 where: { id },
                 include: [{
                     model: EventDate,
+                    as: 'eventDates',
                 }]
             })
-
-            eventUpdated.dataValues = {
-                ...eventUpdated.dataValues,
-                eventDates: eventUpdated.EventDates
-            }
-
-            delete eventUpdated.dataValues.EventDates;
 
             for (let i = 0; i < eventUpdated.dataValues.eventDates.length; i++) {
                 delete eventUpdated.dataValues.eventDates[i].dataValues.eventId;
@@ -216,6 +243,7 @@ module.exports = {
                 whereInclude = {
                     include: [{
                         model: EventDate,
+                        as: 'eventDates',
                         where: {
                             id: confirmedDateId
                         }
@@ -227,13 +255,6 @@ module.exports = {
                 where: { id },
                 ...whereInclude
             });
-
-            getEvent.dataValues = {
-                ...getEvent.dataValues,
-                eventDates : getEvent.dataValues.EventDates ? getEvent.dataValues.EventDates : []
-            }
-
-            delete getEvent.dataValues.EventDates;
 
             const response = {
                ...getEvent.dataValues
