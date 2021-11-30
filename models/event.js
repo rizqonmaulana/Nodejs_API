@@ -17,9 +17,11 @@ module.exports = (sequelize, DataTypes) => {
       });
       Event.belongsTo(models.User, {
         foreignKey: 'companyUserId',
+        as: 'userCompany'
       });
       Event.belongsTo(models.User, {
         foreignKey: 'vendorUserId',
+        as: 'userVendor'
       });
     }
   };

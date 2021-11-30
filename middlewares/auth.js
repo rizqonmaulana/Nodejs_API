@@ -4,8 +4,6 @@ const helper = require('../helpers/response')
 module.exports = {
   isLogin: (req, res, next) => {
     let token = req.headers.authorization
-    console.log(req.headers);
-    console.log('ini token ', token);
     // proses 1 check apakah headers dimasukkan ?
     if (token) {
       // proses 2 validasi token

@@ -1,5 +1,6 @@
 const db = require('../models/index');
 const Event = db.Event;
+const User = db.User;
 const EventDate = db.EventDate;
 const helper = require('../helpers/response');
 const Op = db.Sequelize.Op;
@@ -76,10 +77,21 @@ module.exports = {
                 include: [{
                     model: EventDate,
                     as: 'eventDates',
+                },
+                {
+                    model: User,
+                    as: 'userCompany',
+                    attributes: ['id', 'username', 'institutionName']
+                },
+                {
+                    model: User,
+                    as: 'userVendor',
+                    attributes: ['id', 'username', 'institutionName']
                 }],
                 limit : limit,
                 offset : (page - 1) * limit,
                 distinct: true,
+                order: [['id', 'DESC']]
             })
 
 
@@ -116,12 +128,12 @@ module.exports = {
             const {
                 name,
                 locationText,
-                locationLat,
-                locationLang,
                 companyUserId,
                 vendorUserId,
                 eventDates
             } = req.body;
+
+            console.log(req.body);
 
             if (eventDates.length > 3) {
                 return helper.response(res, 400, 'Please insert only 3 date');
@@ -130,8 +142,6 @@ module.exports = {
             const newEvent = await Event.create({
                 name,
                 locationText,
-                locationLat,
-                locationLang,
                 status: 'Pending',
                 companyUserId,
                 vendorUserId
