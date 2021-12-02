@@ -44,16 +44,6 @@ module.exports = {
 
             if (filter === 'All'){
                 filterWhere = {}
-<<<<<<< HEAD
-            } else if (filter === 'Pending' || filter === 'Approve' || filter === 'Reject'){
-                filterWhere = {
-                    status: {
-                        [Op.like]: `%${filter}%`
-                    }
-                }
-            } else {
-                return helper.response(res, 400, 'Filter is not valid, it should be All || Pending || Approve || Reject')
-=======
             } else if (filter === 'Pending'){
                 filterWhere = {
                     status: {
@@ -74,7 +64,6 @@ module.exports = {
                 }
             } else {
                 return helper.response(res, 400, 'Filter is not valid')
->>>>>>> middleware
             }
 
             totalData = await Event.findAndCountAll({
@@ -88,33 +77,6 @@ module.exports = {
                         ...filterWhere
                     }],
                 },
-<<<<<<< HEAD
-            })
-
-
-            // const totalPage = Math.ceil(totalData / limit)
-            // const offset = page * limit - limit
-            // const prevLink =
-            //     page > 1
-            //     ? qs.stringify({ ...request.query, ...{ page: page - 1 } })
-            //     : null
-            // const nextLink =
-            //     page < totalPage
-            //     ? qs.stringify({ ...request.query, ...{ page: page + 1 } })
-            //     : null
-
-            // const pageInfo = {
-            //     page,
-            //     totalPage,
-            //     limit,
-            //     totalData,
-            //     nextLink: nextLink && process.env.URL + `/product?${nextLink}`,
-            //     prevLink: prevLink && process.env.URL + `/product?${prevLink}`
-            // }
-
-            // console.log(totalData);
-            return helper.response(res, 200, 'Success get data', totalData);
-=======
                 include: [{
                     model: EventDate,
                     as: 'eventDates',
@@ -158,7 +120,6 @@ module.exports = {
             const response = [ ...totalData.rows ]
 
             return helper.response(res, 200, 'Success get data', response, pageInfo);
->>>>>>> middleware
         } catch (error) {
             console.log(error);
             return helper.response(res, 400, error);
