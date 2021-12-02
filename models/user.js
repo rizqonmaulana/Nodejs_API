@@ -12,10 +12,12 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       // define association here
       User.hasMany(models.Event, {
-        foreignKey: 'companyUserId'
+        foreignKey: 'companyUserId',
+        as: 'userCompany'
       });
       User.hasMany(models.Event, {
-        foreignKey: 'vendorUserId'
+        foreignKey: 'vendorUserId',
+        as: 'userVendor'
       });
     } 
   };

@@ -1,9 +1,10 @@
 const db = require('../models/index');
 const Event = db.Event;
+const User = db.User;
 const EventDate = db.EventDate;
 const helper = require('../helpers/response');
-const e = require('express');
 const Op = db.Sequelize.Op;
+const qs = require('querystring')
 
 module.exports = {
     getEvent: async (req, res) => {
@@ -43,6 +44,7 @@ module.exports = {
 
             if (filter === 'All'){
                 filterWhere = {}
+<<<<<<< HEAD
             } else if (filter === 'Pending' || filter === 'Approve' || filter === 'Reject'){
                 filterWhere = {
                     status: {
@@ -51,6 +53,28 @@ module.exports = {
                 }
             } else {
                 return helper.response(res, 400, 'Filter is not valid, it should be All || Pending || Approve || Reject')
+=======
+            } else if (filter === 'Pending'){
+                filterWhere = {
+                    status: {
+                        [Op.like]: 'Pending'
+                    }
+                }
+            } else if (filter === 'Approve'){
+                filterWhere = {
+                    status: {
+                        [Op.like]: 'Approve'
+                    }
+                }
+            } else if (filter === 'Reject'){
+                filterWhere = {
+                    status: {
+                        [Op.like]: 'Reject'
+                    }
+                }
+            } else {
+                return helper.response(res, 400, 'Filter is not valid')
+>>>>>>> middleware
             }
 
             totalData = await Event.findAndCountAll({
@@ -64,6 +88,7 @@ module.exports = {
                         ...filterWhere
                     }],
                 },
+<<<<<<< HEAD
             })
 
 
@@ -89,6 +114,51 @@ module.exports = {
 
             // console.log(totalData);
             return helper.response(res, 200, 'Success get data', totalData);
+=======
+                include: [{
+                    model: EventDate,
+                    as: 'eventDates',
+                },
+                {
+                    model: User,
+                    as: 'userCompany',
+                    attributes: ['id', 'username', 'institutionName']
+                },
+                {
+                    model: User,
+                    as: 'userVendor',
+                    attributes: ['id', 'username', 'institutionName']
+                }],
+                limit : limit,
+                offset : (page - 1) * limit,
+                distinct: true,
+                order: [['id', 'DESC']]
+            })
+
+
+            const totalPage = Math.ceil(totalData.count / limit)
+            const prevLink =
+                page > 1
+                ? qs.stringify({ ...req.query, ...{ page: page - 1 } })
+                : null
+            const nextLink =
+                page < totalPage
+                ? qs.stringify({ ...req.query, ...{ page: page + 1 } })
+                : null
+
+            const pageInfo = {
+                page,
+                totalPage,
+                limit,
+                totalData : totalData.count,
+                nextLink: nextLink && process.env.URL + `/event?${nextLink}`,
+                prevLink: prevLink && process.env.URL + `/event?${prevLink}`
+            }
+
+            const response = [ ...totalData.rows ]
+
+            return helper.response(res, 200, 'Success get data', response, pageInfo);
+>>>>>>> middleware
         } catch (error) {
             console.log(error);
             return helper.response(res, 400, error);
@@ -100,22 +170,18 @@ module.exports = {
             const {
                 name,
                 locationText,
-                locationLat,
-                locationLang,
                 companyUserId,
                 vendorUserId,
-                eventDate
+                eventDates
             } = req.body;
 
-            if (eventDate.length > 3) {
+            if (eventDates.length > 3) {
                 return helper.response(res, 400, 'Please insert only 3 date');
             }
 
             const newEvent = await Event.create({
                 name,
                 locationText,
-                locationLat,
-                locationLang,
                 status: 'Pending',
                 companyUserId,
                 vendorUserId
@@ -123,10 +189,10 @@ module.exports = {
 
             let dateArr = []
 
-            for (let i = 0; i < eventDate.length; i++) {
+            for (let i = 0; i < eventDates.length; i++) {
                 let newDate = {
                     eventId: newEvent.id,
-                    date: eventDate[i],
+                    date: eventDates[i],
                 }
                 dateArr.push(newDate)
             }
@@ -158,10 +224,10 @@ module.exports = {
                 locationLang,
                 companyUserId,
                 vendorUserId,
-                eventDate
+                eventDates
             } = req.body;
 
-            if (eventDate.length > 3) {
+            if (eventDates.length > 3) {
                 return helper.response(res, 400, 'Please insert only 3 date');
             }
 
@@ -176,11 +242,11 @@ module.exports = {
                 where: { id }
             })
 
-            for (let i = 0; i < eventDate.length; i++) {
+            for (let i = 0; i < eventDates.length; i++) {
                await EventDate.update({
-                    date: eventDate[i].date,
+                    date: eventDates[i].date,
                 }, {
-                    where: { id: eventDate[i].id }
+                    where: { id: eventDates[i].id }
                 })
             }
 
@@ -188,15 +254,9 @@ module.exports = {
                 where: { id },
                 include: [{
                     model: EventDate,
+                    as: 'eventDates',
                 }]
             })
-
-            eventUpdated.dataValues = {
-                ...eventUpdated.dataValues,
-                eventDates: eventUpdated.EventDates
-            }
-
-            delete eventUpdated.dataValues.EventDates;
 
             for (let i = 0; i < eventUpdated.dataValues.eventDates.length; i++) {
                 delete eventUpdated.dataValues.eventDates[i].dataValues.eventId;
@@ -229,10 +289,10 @@ module.exports = {
             let whereInclude = {}
 
             if (confirmedDateId && status === 'Approve') {
-                console.log('masuk');
                 whereInclude = {
                     include: [{
                         model: EventDate,
+                        as: 'eventDates',
                         where: {
                             id: confirmedDateId
                         }
@@ -244,13 +304,6 @@ module.exports = {
                 where: { id },
                 ...whereInclude
             });
-
-            getEvent.dataValues = {
-                ...getEvent.dataValues,
-                eventDates : getEvent.dataValues.EventDates ? getEvent.dataValues.EventDates : []
-            }
-
-            delete getEvent.dataValues.EventDates;
 
             const response = {
                ...getEvent.dataValues

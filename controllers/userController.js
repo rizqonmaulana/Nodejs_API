@@ -82,5 +82,21 @@ module.exports = {
             console.log(error);
             return helper.response(res, 400, 'Bad Request', error);
         }
-    }
+    },
+
+    getUserVendor: async (req, res) => {
+        try {
+            const vendor = await User.findAll({
+                where: {
+                    role: 'vendor'
+                },
+                attributes: {exclude: ['password', 'createdAt', 'updatedAt']}
+            });
+
+            return helper.response(res, 200, 'Success', vendor);
+        } catch (error) {
+            console.log(error);
+            return helper.response(res, 400, 'Bad Request', error);
+        }
+    },
 };
