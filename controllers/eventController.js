@@ -133,8 +133,6 @@ module.exports = {
                 eventDates
             } = req.body;
 
-            console.log(req.body);
-
             if (eventDates.length > 3) {
                 return helper.response(res, 400, 'Please insert only 3 date');
             }
@@ -249,7 +247,6 @@ module.exports = {
             let whereInclude = {}
 
             if (confirmedDateId && status === 'Approve') {
-                console.log('masuk');
                 whereInclude = {
                     include: [{
                         model: EventDate,
