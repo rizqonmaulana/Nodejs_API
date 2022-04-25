@@ -5,6 +5,8 @@ const EventDate = db.EventDate;
 const helper = require('../helpers/response');
 const Op = db.Sequelize.Op;
 const qs = require('querystring')
+const Cryptr = require('cryptr');
+const cryptr = new Cryptr('myTotallySecretKey');
 
 module.exports = {
     getEvent: async (req, res) => {
@@ -117,6 +119,18 @@ module.exports = {
                 prevLink: prevLink && process.env.URL + `/event?${prevLink}`
             }
 
+            let result = []
+
+            totalData.rows.map((item)=> {
+                if(item.locationLang){
+                    item.locationLang = cryptr.decrypt(item.locationLang);
+                }
+                if(item.locationLat){
+                    item.locationLat = cryptr.decrypt(item.locationLat);
+                }
+                result.push(item)
+            })
+
             const response = [ ...totalData.rows ]
 
             return helper.response(res, 200, 'Success get data', response, pageInfo);
@@ -128,9 +142,11 @@ module.exports = {
 
     createEvent: async (req, res) => {
         try {
-            const {
+            let {
                 name,
                 locationText,
+                locationLang,
+                locationLat,
                 companyUserId,
                 vendorUserId,
                 eventDates
@@ -140,10 +156,15 @@ module.exports = {
                 return helper.response(res, 400, 'Please insert only 3 date');
             }
 
+            locationLang = cryptr.encrypt(locationLang);
+            locationLat = cryptr.encrypt(locationLat)
+
             const newEvent = await Event.create({
                 name,
                 locationText,
                 status: 'Pending',
+                locationLang,
+                locationLat,
                 companyUserId,
                 vendorUserId
             });
