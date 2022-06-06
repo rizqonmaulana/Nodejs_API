@@ -5,6 +5,7 @@ const EventDate = db.EventDate;
 const helper = require('../helpers/response');
 const Op = db.Sequelize.Op;
 const qs = require('querystring')
+const sequelize = db.sequelize;
 
 module.exports = {
     getEvent: async (req, res) => {
@@ -24,7 +25,18 @@ module.exports = {
             let roleWhere = {}
             let filterWhere = {}
 
-            search ? searchWhere = { name: { [Op.like]: `%${search}%` } } : searchWhere = {}
+            // search ? searchWhere = { name: { [Op.like]: `%${search}%` } } : searchWhere = {}
+
+            // search ? searchWhere = { [sequelize.literal(`CONVERT(AES_DECRYPT('nameEncrypted', "secretKey") USING utf8)`)]: { [Op.like]: `%${search}%` } } : searchWhere = {}
+
+            search ? searchWhere = 
+                [
+                    sequelize.where(sequelize.literal('CONVERT(AES_DECRYPT(nameEncrypted, "secretKey") USING utf8)'), 
+                    { 
+                        [Op.like]: `%${search}%` 
+                    })
+                ]
+            : searchWhere = {}
 
             if (role === 'HR'){ 
                 roleWhere = {
@@ -66,10 +78,25 @@ module.exports = {
                 return helper.response(res, 400, 'Filter is not valid')
             }
 
+            console.log('ini searchWhere : ', searchWhere)
+
             totalData = await Event.findAndCountAll({
-                include: [{
-                    model: EventDate
-                }],
+                attributes: [
+                    'id', 
+                    // 'name',
+                    // 'locationLat',
+                    // 'locationLang',
+                    [sequelize.literal('CONVERT(AES_DECRYPT(`nameEncrypted`, "secretKey") USING utf8)'), 'name'],
+                    [sequelize.literal('CONVERT(AES_DECRYPT(`locationLatEncrypted`, "secretKey") USING utf8)'), 'locationLat'],
+                    [sequelize.literal('CONVERT(AES_DECRYPT(`locationLangEncrypted`, "secretKey") USING utf8)'), 'locationLang'],
+                    'status', 
+                    'remarks', 
+                    'companyUserId', 
+                    'vendorUserId'
+                ],
+                // include: [{
+                //     model: EventDate
+                // }],
                 where: {
                     [Op.or]: [{
                         ...searchWhere,
@@ -97,7 +124,6 @@ module.exports = {
                 order: [['id', 'DESC']]
             })
 
-
             const totalPage = Math.ceil(totalData.count / limit)
             const prevLink =
                 page > 1
@@ -117,7 +143,17 @@ module.exports = {
                 prevLink: prevLink && process.env.URL + `/event?${prevLink}`
             }
 
+            
+
             const response = [ ...totalData.rows ]
+            // console.log('ini response => ', response)
+            // totalData.rows.map(item => {
+            //     // console.log('ini item => ', item)
+            //     console.log('ini nameee => ', item.dataValues.nameee)
+            //     console.log('typeof nameee ', typeof item.dataValues.nameee)
+            //     // item.dataValues.nameee = item.dataValues.nameee
+            //     // return item
+            // })
 
             return helper.response(res, 200, 'Success get data', response, pageInfo);
         } catch (error) {
@@ -132,6 +168,8 @@ module.exports = {
                 name,
                 locationText,
                 companyUserId,
+                locationLat,
+                locationLang,
                 vendorUserId,
                 eventDates
             } = req.body;
@@ -144,6 +182,8 @@ module.exports = {
                 name,
                 locationText,
                 status: 'Pending',
+                locationLang,
+                locationLat,
                 companyUserId,
                 vendorUserId
             });

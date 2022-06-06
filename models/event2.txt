@@ -1,0 +1,48 @@
+'use strict';
+const { Sequelize, DataTypes } = require('sequelize');
+const sequelize = new Sequelize('sqlite::memory:');
+const Cryptr = require('cryptr');
+const cryptr = new Cryptr('myTotallySecretKey');
+
+const Event = sequelize.define('Event', {
+    name: {
+        type: DataTypes.STRING,
+        set(value){
+          console.log('masuk set')
+          this.setDataValue('name', cryptr.encrypt(value));
+        },
+        get(){
+          if(this.getDataValue('name')){
+            console.log('masuk gettt')
+            return cryptr.decrypt(this.getDataValue('name'));
+          }
+        }
+      },
+      confirmedDateId: DataTypes.INTEGER,
+      locationText: DataTypes.STRING,
+      locationLat: {
+        type: DataTypes.STRING,
+        get(){
+          if(this.getDataValue('locationLat')){
+            return cryptr.decrypt(this.getDataValue('locationLat'))
+          }
+        }
+      },
+      locationLang: {
+        type: DataTypes.STRING,
+        get(){
+          if(this.getDataValue('locationLang')){
+            return cryptr.decrypt(this.getDataValue('locationLang'))
+          }
+        }
+      },
+      status: DataTypes.ENUM('Pending', 'Approve', 'Reject'),
+      remarks: DataTypes.STRING,
+      companyUserId: DataTypes.INTEGER,
+      vendorUserId: DataTypes.INTEGER,
+}, {
+  // Other model options go here
+});
+
+// `sequelize.define` also returns the model
+console.log(Event === sequelize.models.Event); // true
